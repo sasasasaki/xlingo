@@ -8,6 +8,7 @@ X の入力欄に中国語を書く → ワンクリックで日本語/英語に
 
 ## Features
 - 🔘 Floating button on the compose box / hotkey **Alt+T**
+- 🖱️ **Select any text on any page → right-click → "xLingo:补齐另外两种语言"** — auto-detects CN/JA/EN and outputs the other two (better than built-in Grok translate)
 - 🇯🇵🇬🇧 Japanese + English side by side, **editable before inserting**
 - 📖 Glossary: your fixed translations are enforced (e.g. character names)
 - 🎨 Per-language style rules (casual JP for posts, polite for artists, etc.)
@@ -23,6 +24,7 @@ X の入力欄に中国語を書く → ワンクリックで日本語/英語に
 ## Notes
 - Inserting replaces the whole compose box (hashtags/@/URLs are preserved inside the translation)
 - If X changes its DOM and the button misses the box: click inside the box, then Alt+T
+- Alt+T is context-aware: text selected → selection mode; otherwise X compose mode
 - Roadmap: Firefox port · style presets per audience · Typefully integration
 
 ## License

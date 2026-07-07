@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "xLingo — 中→日英 発信アシスト",
-  "version": "0.1.0",
-  "description": "X の入力欄の中国語を、自分の語彙集つきで日本語/英語に翻訳(DeepSeek/Grok/Gemini 自動フェイルオーバー)",
-  "permissions": ["storage", "activeTab"],
+  "name": "xLingo — CN/JA/EN 三语发信助手",
+  "version": "0.2.0",
+  "description": "X 输入框中文→日英翻译;任意网页划词→补齐另外两种语言(DeepSeek/Grok/Gemini 自动调配+自有语料库)",
+  "permissions": ["storage", "activeTab", "contextMenus"],
   "host_permissions": [
     "https://api.deepseek.com/*",
     "https://api.x.ai/*",
@@ -12,7 +12,7 @@
   "background": { "service_worker": "bg.js" },
   "content_scripts": [
     {
-      "matches": ["https://x.com/*", "https://twitter.com/*", "https://pro.x.com/*"],
+      "matches": ["<all_urls>"],
       "js": ["content.js"],
       "css": ["content.css"]
     }
@@ -22,7 +22,7 @@
   "commands": {
     "translate": {
       "suggested_key": { "default": "Alt+T" },
-      "description": "現在の入力欄を翻訳"
+      "description": "翻译:X输入框(compose)或当前选中文本(selection)"
     }
   }
 }

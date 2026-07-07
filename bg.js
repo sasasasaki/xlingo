@@ -1,5 +1,4 @@
-// xLingo service worker — 多供应商自动调配(按优先级失败切换)
-// 供应商全部走 OpenAI 兼容 chat/completions,一套客户端三个 baseURL。
+// xLingo service worker — 多供应商自动调配 + 两种模式(compose:中→日英 / selection:任意→另两语)
 
 const PROVIDERS = {
   deepseek: { base: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
@@ -9,29 +8,42 @@ const PROVIDERS = {
 const TIMEOUT_MS = 25000;
 
 async function getCfg() {
-  const d = await chrome.storage.local.get({
-    keys: {},                 // {deepseek:'sk-..', grok:'', gemini:''}
-    order: ['deepseek', 'grok', 'gemini'],
-    models: {},               // 可覆盖默认模型名
-    glossary: '',             // 用户语料库:术语对/固定译法,每行一条
-    styleJa: '',              // 日文风格样例/规则
-    styleEn: '',              // 英文风格样例/规则
+  return chrome.storage.local.get({
+    keys: {}, order: ['deepseek', 'grok', 'gemini'], models: {},
+    glossary: '', styleJa: '', styleEn: '',
   });
-  return d;
 }
 
-function buildPrompt(text, cfg) {
+function commonRules(cfg) {
   const gl = cfg.glossary ? `\n【固定译法/术语表(必须遵守)】\n${cfg.glossary}` : '';
   const ja = cfg.styleJa ? `\n【日文风格要求】\n${cfg.styleJa}` : '';
   const en = cfg.styleEn ? `\n【英文风格要求】\n${cfg.styleEn}` : '';
+  return gl + ja + en;
+}
+
+function buildPrompt(text, mode, cfg) {
+  if (mode === 'selection') {
+    return {
+      system: `你是三语(中文/日本語/English)翻译助手,服务二次元/AI创作圈。
+用户给你一段网页上选中的文本。先判断它的主要语言:
+- 若是日文 → 翻成中文和英文
+- 若是英文 → 翻成中文和日文
+- 若是中文 → 翻成日文和英文
+- 若是其他语言 → 翻成中文/日文/英文三种
+要求:自然地道不直译腔;术语表必须遵守;保留原文换行/URL/@。
+只输出 JSON,键为语言码,只含目标语言(不含原语言):
+{"src":"检测到的语言码(zh/ja/en/other)","zh":"...","ja":"...","en":"..."}(不需要的键省略)${commonRules(cfg)}`,
+      user: text,
+    };
+  }
+  // compose: 中→日英(发帖习惯)
   return {
     system: `你是 X(Twitter) 发帖翻译助手。把用户的中文帖文翻成自然地道的日文和英文,面向二次元/AI创作圈,不是直译腔。
 规则:
-- 日文:X 圈自然口语,禁翻译腔;保留原文的 hashtag/@/URL/换行结构;emoji 原样保留。
-- 英文:同上,简洁有 X 平台语感。
-- 术语表中的词必须用指定译法。
-- 各语言长度尽量 ≤280 字符(日文≤140 全角感觉),超长时优先精炼而非截断。
-- 只输出 JSON:{"ja":"...","en":"..."},不要任何其他文字。${gl}${ja}${en}`,
+- 日文:X 圈自然口语,禁翻译腔;保留 hashtag/@/URL/换行;emoji 原样。
+- 英文:同上,简洁有 X 语感。
+- 各语言长度尽量适配 X 字数限制,超长优先精炼。
+只输出 JSON:{"ja":"...","en":"..."}${commonRules(cfg)}`,
     user: text,
   };
 }
@@ -45,16 +57,11 @@ async function callProvider(name, cfg, prompt) {
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
     const r = await fetch(`${p.base}/chat/completions`, {
-      method: 'POST',
-      signal: ctrl.signal,
+      method: 'POST', signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
       body: JSON.stringify({
-        model,
-        temperature: 0.3,
-        messages: [
-          { role: 'system', content: prompt.system },
-          { role: 'user', content: prompt.user },
-        ],
+        model, temperature: 0.3,
+        messages: [{ role: 'system', content: prompt.system }, { role: 'user', content: prompt.user }],
         response_format: { type: 'json_object' },
       }),
     });
@@ -63,32 +70,40 @@ async function callProvider(name, cfg, prompt) {
     const content = j.choices?.[0]?.message?.content || '';
     const m = content.match(/\{[\s\S]*\}/);
     const out = JSON.parse(m ? m[0] : content);
-    if (!out.ja && !out.en) throw new Error(`${name}: bad shape`);
-    return { ja: out.ja || '', en: out.en || '', provider: name };
-  } finally {
-    clearTimeout(timer);
+    if (!out.ja && !out.en && !out.zh) throw new Error(`${name}: bad shape`);
+    return { ...out, provider: name };
+  } finally { clearTimeout(timer); }
+}
+
+async function translate(text, mode) {
+  const cfg = await getCfg();
+  const prompt = buildPrompt(text, mode, cfg);
+  const errors = [];
+  for (const name of cfg.order) {
+    if (!(cfg.keys || {})[name]) continue;
+    try { return { ok: true, mode, ...(await callProvider(name, cfg, prompt)) }; }
+    catch (e) { errors.push(String(e.message || e)); }
   }
+  return { ok: false, error: errors.join(' | ') || '没有配置 API key(右键扩展图标→选项)' };
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type !== 'translate') return;
-  (async () => {
-    const cfg = await getCfg();
-    const prompt = buildPrompt(msg.text, cfg);
-    const errors = [];
-    for (const name of cfg.order) {
-      if (!(cfg.keys || {})[name]) continue;
-      try {
-        const out = await callProvider(name, cfg, prompt);
-        sendResponse({ ok: true, ...out });
-        return;
-      } catch (e) {
-        errors.push(String(e.message || e));
-      }
-    }
-    sendResponse({ ok: false, error: errors.join(' | ') || '没有配置任何 API key(右键扩展图标→选项)' });
-  })();
-  return true; // async
+  translate(msg.text, msg.mode || 'compose').then(sendResponse);
+  return true;
+});
+
+// 划词右键菜单
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: 'xlingo-selection',
+    title: 'xLingo:补齐另外两种语言',
+    contexts: ['selection'],
+  });
+});
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId !== 'xlingo-selection' || !tab?.id) return;
+  chrome.tabs.sendMessage(tab.id, { type: 'selection-translate', text: info.selectionText || '' });
 });
 
 chrome.commands?.onCommand?.addListener((cmd) => {
