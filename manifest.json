@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "xLingo — 中→日英 発信アシスト",
+  "version": "0.1.0",
+  "description": "X の入力欄の中国語を、自分の語彙集つきで日本語/英語に翻訳(DeepSeek/Grok/Gemini 自動フェイルオーバー)",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": [
+    "https://api.deepseek.com/*",
+    "https://api.x.ai/*",
+    "https://generativelanguage.googleapis.com/*"
+  ],
+  "background": { "service_worker": "bg.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*", "https://pro.x.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ],
+  "options_page": "options.html",
+  "action": { "default_title": "xLingo 設定(右クリック→オプション)" },
+  "commands": {
+    "translate": {
+      "suggested_key": { "default": "Alt+T" },
+      "description": "現在の入力欄を翻訳"
+    }
+  }
+}

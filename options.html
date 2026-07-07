@@ -1,0 +1,40 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>xLingo 設定</title>
+<style>
+  body { font-family: -apple-system, "Segoe UI", "Noto Sans JP", sans-serif; background:#0b0d10; color:#e7e9ea; max-width:720px; margin:32px auto; padding:0 16px; font-size:16px; }
+  h1 { font-size:20px; } h2 { font-size:15px; color:#b3122e; margin-top:28px; }
+  input, textarea, select { width:100%; box-sizing:border-box; background:#16181c; color:#e7e9ea; border:1px solid #2f3336; border-radius:8px; padding:8px; font-size:14px; }
+  textarea { min-height:110px; font-family: ui-monospace, monospace; }
+  label { display:block; margin:10px 0 4px; font-size:13px; color:#8b98a5; }
+  button { background:#b3122e; color:#fff; border:none; border-radius:999px; padding:10px 26px; font-size:15px; cursor:pointer; margin-top:20px; }
+  .hint { font-size:12px; color:#8b98a5; }
+  #saved { color:#7ee787; margin-left:12px; }
+</style>
+<h1>xLingo 設定</h1>
+
+<h2>API Keys(填哪个用哪个,按顺序自动失败切换)</h2>
+<label>DeepSeek key</label><input id="k-deepseek" type="password" placeholder="sk-...">
+<label>Grok (x.ai) key</label><input id="k-grok" type="password" placeholder="xai-...">
+<label>Gemini key</label><input id="k-gemini" type="password" placeholder="AIza...">
+<label>调配顺序</label>
+<select id="order">
+  <option value="deepseek,grok,gemini">DeepSeek → Grok → Gemini</option>
+  <option value="grok,deepseek,gemini">Grok → DeepSeek → Gemini</option>
+  <option value="gemini,deepseek,grok">Gemini → DeepSeek → Grok</option>
+</select>
+
+<h2>语料库(固定译法/术语表)</h2>
+<p class="hint">每行一条,格式随意(如「魔女デリバリー=そのまま」「モエロ→moero.ai」),会整体喂给模型并强制遵守。</p>
+<textarea id="glossary" placeholder="ダセリナ=ダセリナ(不要音译成其他)
+魂蒸馏=ソウル蒸留
+角色卡=キャラカード"></textarea>
+
+<h2>日文风格规则/样例</h2>
+<textarea id="styleJa" placeholder="例:絵師さん宛ては丁寧め;通常ポストは砕けた口調;「〜です/ます」使いすぎない"></textarea>
+
+<h2>英文风格规则/样例</h2>
+<textarea id="styleEn" placeholder="e.g. casual, no corporate tone, keep hashtags"></textarea>
+
+<button id="save">保存</button><span id="saved"></span>
+<script src="options.js"></script>
