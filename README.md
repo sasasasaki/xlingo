@@ -1,16 +1,29 @@
-# xLingo — X 输入框中文→日英翻译插件
+# xLingo
 
-输入框写中文 → 点悬浮「訳」钮或 Alt+T → 面板出日文+英文(可直接编辑)→「入力欄へ」替换/「コピー」。
-多供应商自动调配:DeepSeek → Grok → Gemini(填哪个用哪个,失败自动切换)。语料库(固定译法)+日/英风格规则在选项页,整体喂给模型强制遵守。
+Write in Chinese, post in Japanese & English — an X (Twitter) compose-box translator with **your own glossary** and **multi-provider failover** (DeepSeek → Grok → Gemini).
 
-## 安装(30 秒)
-1. Chrome 打开 `chrome://extensions` → 右上开「开发者模式」
-2. 「加载已解压的扩展程序」→ 选本文件夹 `F:\GITHUB\xlingo`
-3. 右键扩展图标 → 选项 → 填 API key + 粘贴你的语料库 → 保存
-4. 上 x.com,点开发帖框,右下出现红色「訳」钮
+X の入力欄に中国語を書く → ワンクリックで日本語/英語に。自分の用語集を強制適用、API は自動フェイルオーバー。
 
-## 说明
-- key 只存本机 chrome.storage.local,不出浏览器(直连各家官方 API)
-- 面板里的译文可手改后再插入;插入=整框替换(hashtag/@/URL 会保留在译文里)
-- X 改版导致找不到输入框时:先点一下输入框再按 Alt+T
-- 翻译核心(bg.js 的 prompt+调配链)独立,将来工厂控制台加"发X面板"直接复用
+在 X 输入框写中文 → 一键出日文+英文,固定译法(语料库)强制遵守,多家 API 自动调配。
+
+## Features
+- 🔘 Floating button on the compose box / hotkey **Alt+T**
+- 🇯🇵🇬🇧 Japanese + English side by side, **editable before inserting**
+- 📖 Glossary: your fixed translations are enforced (e.g. character names)
+- 🎨 Per-language style rules (casual JP for posts, polite for artists, etc.)
+- 🔁 Provider failover: DeepSeek → Grok → Gemini (any subset, reorderable)
+- 🔒 Keys live in `chrome.storage.local` only — direct calls to official APIs, no middleman
+
+## Install (unpacked)
+1. `chrome://extensions` → enable **Developer mode**
+2. **Load unpacked** → select this folder
+3. Right-click the extension icon → **Options** → paste your API key(s) + glossary
+4. Open x.com, focus the compose box → red **訳** button appears (or press Alt+T)
+
+## Notes
+- Inserting replaces the whole compose box (hashtags/@/URLs are preserved inside the translation)
+- If X changes its DOM and the button misses the box: click inside the box, then Alt+T
+- Roadmap: Firefox port · style presets per audience · Typefully integration
+
+## License
+MIT © sasasasaki
