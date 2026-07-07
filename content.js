@@ -8,6 +8,7 @@
   ];
   const EDITOR_SEL = EDITOR_SELS.join(', ');
   const LABELS = { zh: '中文', ja: '日本語', en: 'English' };
+  const NBSP = new RegExp(String.fromCharCode(0x00a0), 'g');
   const SEP = '\n\n───────\n\n';   // 三语一键排版时的分割线
   let panel = null;
   let rememberedEditor = null;
@@ -24,17 +25,30 @@
   function getEditor() {
     return (rememberedEditor && document.body.contains(rememberedEditor)) ? rememberedEditor : findEditor();
   }
-  function setText(ed, text) {           // 全文替换
+  // X の draft.js は insertText で改行入り文字列を入れると内部stateが最後の行しか
+  // 覚えない(投稿すると英語だけになるバグ)。paste を模擬すると複数行を正しく取り込む。
+  function setText(ed, text) {           // 全文替换(paste 模拟,多行安全)
     ed.focus();
-    document.execCommand('selectAll', false, null);
-    document.execCommand('insertText', false, text);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    const range = document.createRange();
+    range.selectNodeContents(ed);
+    sel.addRange(range);
+    const dt = new DataTransfer();
+    dt.setData('text/plain', text);
+    let ev;
+    try {
+      ev = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true });
+      if (!ev.clipboardData) throw new Error('no clipboardData');
+    } catch (_) {
+      ev = new Event('paste', { bubbles: true, cancelable: true });
+      Object.defineProperty(ev, 'clipboardData', { value: dt });
+    }
+    ed.dispatchEvent(ev);
   }
-  function appendText(ed, seg) {          // 追加(与前文空一行)
-    ed.focus();
-    const cur = ed.innerText.replace(/ /g, ' ').replace(/\n$/, '').trim();
-    const next = cur ? cur + '\n\n' + seg : seg;
-    document.execCommand('selectAll', false, null);
-    document.execCommand('insertText', false, next);
+  function appendText(ed, seg) {
+    const cur = ed.innerText.replace(NBSP, ' ').trim();
+    setText(ed, cur ? cur + '\n\n' + seg : seg);
   }
 
   function ensurePanel() {
