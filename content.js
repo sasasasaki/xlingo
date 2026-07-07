@@ -42,11 +42,13 @@
       ed.dispatchEvent(new Event('input', { bubbles: true }));
       return;
     }
+    // 全选现有内容,让 paste 整体替换(双保险:Range + execCommand,X draft.js 里单用 Range 有时选不全→残留原文)
     const sel = window.getSelection();
     sel.removeAllRanges();
     const range = document.createRange();
     range.selectNodeContents(ed);
     sel.addRange(range);
+    try { document.execCommand('selectAll', false, null); } catch (_) {}
     const dt = new DataTransfer();
     dt.setData('text/plain', text);
     let ev;

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "xLingo — CN/JA/EN 三语发信助手",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "X 输入框中文→日英翻译;任意网页划词→补齐另外两种语言(DeepSeek/Grok/Gemini 自动调配+自有语料库)",
   "permissions": ["storage", "activeTab", "contextMenus"],
   "host_permissions": [
