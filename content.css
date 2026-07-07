@@ -32,3 +32,9 @@
 }
 #xlingo-panel .xl-btns button:hover { border-color: #b3122e; }
 #xlingo-panel .xl-status { padding: 6px 12px 10px; font-size: 11px; color: #8b98a5; }
+
+#xlingo-panel .xl-foot { padding: 4px 12px 10px; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #2f3336; }
+#xlingo-panel .xl-foot button { background: #1d2126; color: #e7e9ea; border: 1px solid #2f3336; border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: 12px; }
+#xlingo-panel .xl-foot button:hover { border-color: #b3122e; }
+#xlingo-panel .xl-foot .xl-primary { background: #b3122e; border-color: #b3122e; color: #fff; font-weight: 700; }
+#xlingo-panel .xl-foot .xl-primary:hover { background: #d81b3f; }
