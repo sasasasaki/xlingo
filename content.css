@@ -1,5 +1,5 @@
 #xlingo-fab {
-  position: fixed; right: 18px; bottom: 90px; z-index: 99999;
+  position: fixed; right: 18px; bottom: 170px; z-index: 2147483646;
   width: 44px; height: 44px; border-radius: 50%;
   background: #b3122e; color: #fff; font-size: 17px; font-weight: 700;
   border: none; cursor: pointer; display: none; align-items: center; justify-content: center;
@@ -8,7 +8,7 @@
 #xlingo-fab:hover { background: #d81b3f; }
 
 #xlingo-panel {
-  position: fixed; right: 18px; bottom: 145px; z-index: 99999;
+  position: fixed; right: 18px; bottom: 225px; z-index: 2147483646;
   width: 380px; max-height: 70vh; overflow: auto;
   background: #16181c; color: #e7e9ea; border: 1px solid #2f3336; border-radius: 12px;
   font-size: 14px; box-shadow: 0 4px 24px rgba(0,0,0,.5);

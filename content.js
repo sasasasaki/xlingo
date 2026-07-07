@@ -1,13 +1,26 @@
 // xLingo content script — X 输入框翻译面板 + 任意页划词三语补齐
 (() => {
-  const EDITOR_SEL = '[data-testid^="tweetTextarea"][contenteditable="true"], div[contenteditable="true"][role="textbox"]';
+  // X 编辑器的多代选择器(draft.js 结构随版本漂移,全部兜住)
+  const EDITOR_SELS = [
+    '[data-testid^="tweetTextarea"][contenteditable="true"]',
+    'div[data-testid="tweetTextarea_0"]',
+    '.public-DraftEditor-content[contenteditable="true"]',
+    'div[role="textbox"][contenteditable="true"]',
+  ];
+  const EDITOR_SEL = EDITOR_SELS.join(', ');
   const LABELS = { zh: '中文', ja: '日本語', en: 'English' };
   let panel = null;
   let rememberedEditor = null;
 
   const isX = /(^|\.)x\.com$|(^|\.)twitter\.com$/.test(location.hostname);
 
-  function activeEditor() {
+  function findEditor() {
+    // 弹窗(role=dialog)里的优先——发推弹窗/回复弹窗
+    const dialog = document.querySelector('[role="dialog"]');
+    if (dialog) {
+      const ed = dialog.querySelector(EDITOR_SEL);
+      if (ed) return ed;
+    }
     const el = document.activeElement;
     if (el && el.matches && el.matches(EDITOR_SEL)) return el;
     return document.querySelector(EDITOR_SEL);
@@ -20,7 +33,7 @@
   }
 
   function ensurePanel() {
-    if (panel) return panel;
+    if (panel && document.body.contains(panel)) return panel;
     panel = document.createElement('div');
     panel.id = 'xlingo-panel';
     panel.innerHTML = `
@@ -56,7 +69,7 @@
         const ins = document.createElement('button');
         ins.textContent = '入力欄へ';
         ins.onclick = () => {
-          const ed = rememberedEditor || activeEditor();
+          const ed = (rememberedEditor && document.body.contains(rememberedEditor)) ? rememberedEditor : findEditor();
           if (ed) insertText(ed, block.querySelector('.xl-text').innerText.trim());
         };
         btns.appendChild(ins);
@@ -82,11 +95,11 @@
   }
 
   function composeTranslate() {
-    const ed = activeEditor();
-    if (!ed) return;
+    const ed = findEditor();
+    if (!ed) { ensurePanel().style.display = 'block'; return status('入力欄が見つからない(発帖框を開いてから押して)'); }
     rememberedEditor = ed;
     const text = ed.innerText.replace(/ /g, ' ').trim();
-    if (!text) return status('入力欄が空');
+    if (!text) { ensurePanel().style.display = 'block'; return status('入力欄が空——先に中国語を書いて'); }
     runTranslate(text, 'compose');
   }
 
@@ -96,24 +109,30 @@
     runTranslate(text, 'selection');
   }
 
-  // X 专用悬浮钮
+  // ── X 专用悬浮钮:主动扫描,编辑器存在即常驻(弹窗/内嵌通吃) ──
   if (isX) {
     const fab = document.createElement('button');
     fab.id = 'xlingo-fab';
     fab.textContent = '訳';
     fab.title = '中→日英 翻訳 (Alt+T)';
     fab.onclick = composeTranslate;
-    document.addEventListener('focusin', (e) => {
-      if (e.target.matches && e.target.matches(EDITOR_SEL)) {
-        document.body.appendChild(fab);
+
+    const tick = () => {
+      const has = !!document.querySelector(EDITOR_SEL);
+      if (has) {
+        if (!document.body.contains(fab)) document.body.appendChild(fab);
         fab.style.display = 'flex';
+      } else {
+        fab.style.display = 'none';
       }
-    });
+    };
+    setInterval(tick, 800);
+    new MutationObserver(() => tick()).observe(document.documentElement, { childList: true, subtree: true });
+    tick();
   }
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'hotkey-translate') {
-      // 有选中文本→划词模式;否则 X 输入框模式
       const sel = String(window.getSelection() || '').trim();
       if (sel) selectionTranslate(sel);
       else if (isX) composeTranslate();
